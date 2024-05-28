@@ -188,10 +188,24 @@ mod tests {
         }
     }
 
-    // #[test]
-    // fn test_grant_fail_already_granted() {
-    //     todo!()
-    // }
+    #[test]
+    fn test_grant_fail_already_granted() {
+        match Permission::new("TEST_PERMISSION", 0) {
+            Ok(mut p1) => {
+                p1.has_permission = true;
+                assert_eq!(p1.has_permission, true);
+                assert_eq!(p1.has(), true);
+                match p1.grant() {
+                    Ok(p2) => assert!(false), // should not succeed
+                    Err(kind) => match kind {
+                        ErrorKind::PermissionError(err) => assert!(true),
+                        ErrorKind::ScopeError(_) => assert!(false),
+                    }
+                }
+            },
+            Err(_) => assert!(false)
+        }
+    }
 
     #[test]
     fn test_revoke_ok() {
@@ -207,6 +221,25 @@ mod tests {
                         assert_eq!(p2.has(), false);
                     }
                     Err(_) => assert!(false)
+                }
+            },
+            Err(_) => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_grant_fail_already_revoked() {
+        match Permission::new("TEST_PERMISSION", 0) {
+            Ok(mut p1) => {
+                p1.has_permission = false;
+                assert_eq!(p1.has_permission, false);
+                assert_eq!(p1.has(), false);
+                match p1.revoke() {
+                    Ok(p2) => assert!(false), // should not succeed
+                    Err(kind) => match kind {
+                        ErrorKind::PermissionError(err) => assert!(true),
+                        ErrorKind::ScopeError(_) => assert!(false),
+                    }
                 }
             },
             Err(_) => assert!(false)

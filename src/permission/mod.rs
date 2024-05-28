@@ -75,21 +75,42 @@ mod tests {
     }
 
     #[test]
-    fn test_panic_exceeded_max_shift() {
-        let _ = Permission::new("TEST_PERMISSION", 35);
+    fn test_err_exceeded_max_shift() {
+        let mut i = 0;
+        let base = 50;
+        loop {
+            if i >= 10 {
+                break;
+            }
+
+            match Permission::new("TEST_PERMISSION", base + i) {
+                Ok(permission) => {
+                    assert!(permission.value <= MAX_VALUE)
+                }, // fail because we should not succeed here due to value being too high
+                Err(err) => {
+                    assert!(i >= 3); // left-shift of 53 and higher should fail
+                    match err {
+                        ErrorKind::PermissionError(_) => assert!(true), // expect this error
+                        ErrorKind::ScopeError(_) => assert!(false) // we should not get back a scope error
+                    }
+                }
+            }
+
+            i = i + 1;
+        }
     }
 
     #[test]
-    fn test_panic_invalid_value_not_power_of_two() {
-        // value that is not 0, 1, or a power of 2
-        let invalid_value: u64 = (1 << 26) + 17; // 67108881
+    fn test_err_invalid_value_not_power_of_two() {
+        // value that is not 1 or a power of 2
+        let invalid_value: u64 = (1 << 26) + 17; // 67108881 is not 1 or a power of 2
         let ret = validate_value(&"RANDOM_NAME".to_string(), &invalid_value);
 
         assert!(ret.is_err())
     }
 
     #[test]
-    fn test_panic_invalid_value_zero() {
+    fn test_err_invalid_value_zero() {
         // value of zero should fail
         let invalid_value: u64 = 0;
         let ret = validate_value(&"RANDOM_NAME".to_string(), &invalid_value);
@@ -98,7 +119,7 @@ mod tests {
     }
 
     #[test]
-    fn test_panic_valid_value_one() {
+    fn test_err_valid_value_one() {
         // value that is not 0, 1, or a power of 2
         let valid_value: u64 = 1;
         let ret = validate_value(&"RANDOM_NAME".to_string(), &valid_value);

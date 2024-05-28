@@ -196,9 +196,9 @@ mod tests {
                 assert_eq!(p1.has_permission, true);
                 assert_eq!(p1.has(), true);
                 match p1.grant() {
-                    Ok(p2) => assert!(false), // should not succeed
+                    Ok(_) => assert!(false), // should not succeed
                     Err(kind) => match kind {
-                        ErrorKind::PermissionError(err) => assert!(true),
+                        ErrorKind::PermissionError(_) => assert!(true),
                         ErrorKind::ScopeError(_) => assert!(false),
                     }
                 }
@@ -235,9 +235,9 @@ mod tests {
                 assert_eq!(p1.has_permission, false);
                 assert_eq!(p1.has(), false);
                 match p1.revoke() {
-                    Ok(p2) => assert!(false), // should not succeed
+                    Ok(_) => assert!(false), // should not succeed
                     Err(kind) => match kind {
-                        ErrorKind::PermissionError(err) => assert!(true),
+                        ErrorKind::PermissionError(_) => assert!(true),
                         ErrorKind::ScopeError(_) => assert!(false),
                     }
                 }

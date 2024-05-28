@@ -1,23 +1,24 @@
 pub mod error;
 
+use std::collections::HashMap;
 use crate::common::error::ErrorKind;
 use crate::permission::Permission;
 use crate::scope::error::{ScopeError, ScopeErrorCase};
 
 pub struct Scope {
     name: String,
-    permissions: Vec<Permission>,
+    permissions: HashMap<String, Permission>,
     next_permission_shift: u8,
-    scopes: Vec<Scope>,
+    scopes: HashMap<String, Scope>,
 }
 
 impl Scope {
     pub fn new(name: &str) -> Scope {
         return Scope {
             name: name.to_string(),
-            permissions: vec![],
+            permissions: HashMap::new(),
             next_permission_shift: 0,
-            scopes: vec![]
+            scopes: HashMap::new()
         }
     }
 
@@ -29,7 +30,7 @@ impl Scope {
 
                 return match new_perm {
                     Ok(perm) => {
-                        self.permissions.push(perm);
+                        self.permissions.insert(name.to_string(), perm);
                         self.next_permission_shift = self.next_permission_shift + 1;
                         return Ok(self);
                     },
@@ -42,14 +43,8 @@ impl Scope {
 
     /** Verify that the name given is not already contained within existing. **/
     pub fn validate_name(&self, name: &String) -> Result<(), ErrorKind> {
-        let perm_unique = !self.permissions.is_empty() && self.permissions.iter().any(move |existing_permission| {
-            return name.eq(&existing_permission.name);
-        });
-
-        let scope_unique = !self.scopes.is_empty() && self.scopes.iter().any(move |existing_scope| {
-            // base case
-            return name.eq(&existing_scope.name);
-        });
+        let perm_unique = !self.permissions.is_empty() && self.permissions.contains_key(name);
+        let scope_unique = !self.scopes.is_empty() && self.scopes.contains_key(name);
 
         return match (!perm_unique, !scope_unique) {
             (true, true) => Ok(()),
@@ -58,6 +53,10 @@ impl Scope {
             (false, false) => Err(ErrorKind::ScopeError(ScopeError::new(ScopeErrorCase::BothExist, name)))
         }
     }
+
+    // pub fn permission(name: &str) -> Result<&Permission, ErrorKind> {
+    //
+    // }
 }
 
 #[cfg(test)]
@@ -108,12 +107,17 @@ mod tests {
 
             let name = format!("TEST_PERMISSION_{}", i + 1);
             match scope.add_permission(name.as_str()).and_then(|sc| {
-               assert_eq!(sc.permissions[i].name, name);
-               assert_eq!(sc.permissions[i].value, 1 << (i as u64));
-               Ok(sc)
+                match sc.permissions.get(name.as_str()) {
+                    Some(perm) => {
+                        assert_eq!(perm.name, name);
+                        assert_eq!(perm.value, 1 << (i as u64));
+                    },
+                    _ => assert!(false)
+                }
+                Ok(sc)
             }) {
                 Ok(sc) => {
-                    println!("Created permission ({}): {} = {}", i, sc.permissions[i].name, sc.permissions[i].value);
+                    assert_eq!(sc.permissions.get(name.as_str()).is_some(), true);
                 },
                 Err(kind) => match kind {
                     ErrorKind::PermissionError(err) => eprintln!("{}", err),

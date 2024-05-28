@@ -139,12 +139,11 @@ mod tests {
                         Err(err) => Err(err)
                     }
                 }){
-                    Ok(scope) => {
-                        assert_eq!(scope.name, "TEST_SCOPE");
-                        assert_eq!(scope.scopes.is_empty(), true);
-                        assert_eq!(scope.permissions.len(), 2usize);
-                    },
-                    _ => assert!(false)
+                    Ok(_) => assert!(false), // always fail here because we shouldn't succeed on a duplicate
+                    Err(err) => match err {
+                        ErrorKind::PermissionError(_) => assert!(false),
+                        ErrorKind::ScopeError(_) => assert!(true) // expect this error
+                    }
         }
     }
 }

@@ -6,12 +6,14 @@ use crate::permission::error::PermissionError;
 
 pub struct Permission {
     pub name: String,
-    pub value: u64
+    pub value: u64,
+    pub has_permission: bool
 }
 
 const MAX_VALUE: u64 = 9007199254740991; // = JsNumber.MAX_SAFE_INTEGER
 
 impl Permission {
+    /** Creates a new permission. */
     pub fn new(name: &str, shift: u8) -> Result<Permission, ErrorKind> {
         // verify that the shift is within constraints and create a permission object
         let validated_shift = match validate_shift(&name.to_string(), &shift) {
@@ -25,10 +27,51 @@ impl Permission {
         return match validate_value(&name.to_string(), &(1 << validated_shift)) {
             Ok(_) => Ok(Permission {
                 name: name.to_string(),
-                value: 1 << validated_shift
+                value: 1 << validated_shift,
+                has_permission: false,
             }),
             Err(err) => Err(err),
         };
+    }
+
+    /** Grants the permission to the holder of this reference. */
+    pub fn grant(&mut self) -> Result<&mut Permission, ErrorKind> {
+        // check if the user has already been granted this permission
+        if self.has_permission {
+            return Err(
+                ErrorKind::PermissionError(
+                    PermissionError::new(
+                        PermissionErrorCase::GrantError, &self.name, PermissionErrorMetadata::new()
+                    )
+                )
+            );
+        }
+
+        self.has_permission = true; // grant
+
+        return Ok(self);
+    }
+
+    /** Grants the permission to the holder of this reference. */
+    pub fn revoke(&mut self) -> Result<&mut Permission, ErrorKind> {
+        // check if the user already lacks this permission
+        if !self.has_permission {
+            return Err(
+                ErrorKind::PermissionError(
+                    PermissionError::new(
+                        PermissionErrorCase::RevocationError, &self.name, PermissionErrorMetadata::new()
+                    )
+                )
+            );
+        }
+
+        self.has_permission = false; // revoke
+
+        return Ok(self);
+    }
+
+    pub fn has(&mut self) -> bool {
+        return self.has_permission;
     }
 }
 
@@ -126,4 +169,48 @@ mod tests {
 
         assert!(ret.is_ok())
     }
+
+    #[test]
+    fn test_grant_ok() {
+        match Permission::new("TEST_PERMISSION", 0) {
+            Ok(mut p1) => {
+                assert_eq!(p1.has_permission, false);
+                assert_eq!(p1.has(), false);
+                match p1.grant() {
+                    Ok(p2) => {
+                        assert_eq!(p2.has_permission, true);
+                        assert_eq!(p2.has(), true);
+                    }
+                    Err(_) => assert!(false)
+                }
+            },
+            Err(_) => assert!(false)
+        }
+    }
+
+    // #[test]
+    // fn test_grant_fail_already_granted() {
+    //     todo!()
+    // }
+
+    #[test]
+    fn test_revoke_ok() {
+        match Permission::new("TEST_PERMISSION", 0) {
+            Ok(mut p1) => {
+                p1.has_permission = true;
+                assert_eq!(p1.has_permission, true);
+                assert_eq!(p1.has(), true);
+
+                match p1.revoke() {
+                    Ok(p2) => {
+                        assert_eq!(p2.has_permission, false);
+                        assert_eq!(p2.has(), false);
+                    }
+                    Err(_) => assert!(false)
+                }
+            },
+            Err(_) => assert!(false)
+        }
+    }
+
 }

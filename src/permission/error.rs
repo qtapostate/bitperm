@@ -10,7 +10,9 @@ pub struct PermissionError {
 
 pub enum PermissionErrorCase {
     MaxValue,
-    InvalidValue
+    InvalidValue,
+    GrantError,
+    RevocationError
 }
 
 pub struct PermissionErrorMetadata {
@@ -51,7 +53,9 @@ fn format_error_message(f: &mut Formatter<'_>, case: &PermissionErrorCase, name:
                 panic!("{} - PANIC: Unable to format error message due to missing metadata property 'shift'", ERROR_NAME);
             }
         },
-        PermissionErrorCase::InvalidValue => format!("{}: permission '{}' evaluated to an illegal value that is not 1 or a power of 2.", ERROR_NAME, *name)
+        PermissionErrorCase::InvalidValue => format!("{}: permission '{}' evaluated to an illegal value that is not 1 or a power of 2.", ERROR_NAME, *name),
+        PermissionErrorCase::GrantError => format!("{}: permission '{}' cannot be granted because it already has a value of <true>.", ERROR_NAME, *name),
+        PermissionErrorCase::RevocationError => format!("{}: permission '{}' cannot be revoked because it already has a value of <false>", ERROR_NAME, *name),
     };
 
     write!(f, "{}", err)

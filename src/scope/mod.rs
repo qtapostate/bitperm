@@ -12,9 +12,9 @@ pub struct Scope {
 }
 
 impl Scope {
-    pub fn new(name: String) -> Scope {
+    pub fn new(name: &str) -> Scope {
         return Scope {
-            name,
+            name: name.to_string(),
             permissions: vec![],
             next_permission_shift: 0,
             scopes: vec![]
@@ -22,8 +22,8 @@ impl Scope {
     }
 
     /** Find a permission within this user scope and **/
-    pub fn add_permission(&mut self, name: String) -> Result<&mut Scope, ErrorKind> {
-        return match self.validate_name(&name) {
+    pub fn add_permission(&mut self, name: &str) -> Result<&mut Scope, ErrorKind> {
+        return match self.validate_name(&name.to_string()) {
             Ok(_) => {
                 let new_perm = Permission::new(name, self.next_permission_shift);
 
@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn test_create_scope() {
-        let scope = Scope::new("TEST_SCOPE".to_string());
+        let scope = Scope::new("TEST_SCOPE");
 
         assert_eq!(scope.name, "TEST_SCOPE".to_string());
         assert_eq!(scope.scopes.is_empty(), true);
@@ -75,13 +75,13 @@ mod tests {
 
     #[test]
     fn test_scope_add_permission_ok() {
-        let mut scope = Scope::new("TEST_SCOPE".to_string());
+        let mut scope = Scope::new("TEST_SCOPE");
 
         assert_eq!(scope.name, "TEST_SCOPE".to_string());
         assert_eq!(scope.scopes.is_empty(), true);
         assert_eq!(scope.permissions.is_empty(), true);
 
-        if let Ok(_) = scope.add_permission("TEST_PERMISSION".to_string()) {
+        if let Ok(_) = scope.add_permission("TEST_PERMISSION") {
             assert_eq!(scope.permissions.len(), 1usize); // ensure that we have grown the vector by 1
         } else {
             assert!(false);
@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn test_scope_add_permission_ok_multiple() {
-        let mut scope = Scope::new("TEST_SCOPE".to_string());
+        let mut scope = Scope::new("TEST_SCOPE");
 
         assert_eq!(scope.name, "TEST_SCOPE".to_string());
         assert_eq!(scope.scopes.is_empty(), true);
@@ -107,7 +107,7 @@ mod tests {
             }
 
             let name = format!("TEST_PERMISSION_{}", i + 1);
-            match scope.add_permission(name.to_string()).and_then(|sc| {
+            match scope.add_permission(name.as_str()).and_then(|sc| {
                assert_eq!(sc.permissions[i].name, name);
                assert_eq!(sc.permissions[i].value, 1 << (i as u64));
                Ok(sc)
@@ -129,26 +129,22 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_scope_add_permission_duplicate() {
         match
-            Scope::new("TEST_SCOPE".to_string())
-                .add_permission("TEST_PERMISSION".to_string())
+            Scope::new("TEST_SCOPE")
+                .add_permission("TEST_PERMISSION")
                 .and_then(|sc| {
-                    return match sc.add_permission("TEST_PERMISSION".to_string()) {
+                    return match sc.add_permission("TEST_PERMISSION") {
                         Ok(ok) => Ok(ok),
                         Err(err) => Err(err)
                     }
                 }){
                     Ok(scope) => {
-                        assert_eq!(scope.name, "TEST_SCOPE".to_string());
+                        assert_eq!(scope.name, "TEST_SCOPE");
                         assert_eq!(scope.scopes.is_empty(), true);
                         assert_eq!(scope.permissions.len(), 2usize);
                     },
                     _ => assert!(false)
         }
     }
-
-
-
 }

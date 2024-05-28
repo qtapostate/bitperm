@@ -12,9 +12,9 @@ pub struct Permission {
 const MAX_VALUE: u64 = 9007199254740991; // = JsNumber.MAX_SAFE_INTEGER
 
 impl Permission {
-    pub fn new(name: String, shift: u8) -> Result<Permission, ErrorKind> {
+    pub fn new(name: &str, shift: u8) -> Result<Permission, ErrorKind> {
         // verify that the shift is within constraints and create a permission object
-        let validated_shift = match validate_shift(&name, &shift) {
+        let validated_shift = match validate_shift(&name.to_string(), &shift) {
             Ok(result) => result,
             Err(err) => {
                 return Err(err)
@@ -22,9 +22,9 @@ impl Permission {
         };
 
         // Verify that the value we created with the shift is legal for bitwise operations
-        return match validate_value(&name, &(1 << validated_shift)) {
+        return match validate_value(&name.to_string(), &(1 << validated_shift)) {
             Ok(_) => Ok(Permission {
-                name,
+                name: name.to_string(),
                 value: 1 << validated_shift
             }),
             Err(err) => Err(err),
@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn test_create_permission_valid() {
-        let new_permission = Permission::new("TEST_PERMISSION".to_string(), 0);
+        let new_permission = Permission::new("TEST_PERMISSION", 0);
 
         assert_eq!(new_permission.is_ok(), true);
 
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_panic_exceeded_max_shift() {
-        let _ = Permission::new("TEST_PERMISSION".to_string(), 35);
+        let _ = Permission::new("TEST_PERMISSION", 35);
     }
 
     #[test]

@@ -321,4 +321,41 @@ mod tests {
             _ => assert!(false)
         }
     }
+
+    #[test]
+    pub fn test_as_u64_calculate_multiple() {
+        let mut scope = Scope::new("TEST_SCOPE");
+        let mut i = 0;
+        let max = 53;
+
+        loop {
+            if i == max {
+                break;
+            }
+
+            let name = format!("TEST_PERMISSION_{}", i);
+            match scope.add_permission(name.as_str()) {
+                Ok(_) => {
+                    // find the permission and pass the borrowed variable along the chain to grant
+                    scope.permission(name.as_str()).and_then(|perm| {
+                        // grant the permission
+                        return match perm.grant() {
+                            Ok(p) => Some(p),
+                            _ => {
+                                assert!(false);
+                                None
+                            }
+                        }
+                    });
+                }
+                _ => {
+                    panic!("Failed to grant permission '{}'", name);
+                }
+            }
+
+            i = i + 1;
+        }
+
+        assert_eq!(scope.as_u64(), get_test_scope_value(scope.permissions.len() as u8));
+    }
 }

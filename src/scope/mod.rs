@@ -107,6 +107,7 @@ impl Scope {
 
 #[cfg(test)]
 mod tests {
+    use crate::permission::MAX_VALUE;
     use super::*;
 
     #[test]
@@ -241,13 +242,65 @@ mod tests {
         assert_eq!(child.is_none(), true);
     }
 
+    /**
+        Get the final result given a number of added permissions
+        assuming all permissions in a scope are granted.
+     */
+    fn get_test_scope_value(number_added: u8) -> u64 {
+        if number_added == 0 {
+            return 0;
+        }
+
+        let mut value = 0;
+        let mut i = 0;
+
+        loop {
+            if i > number_added - 1 {
+                break;
+            }
+
+            // shift 1 over a certain number of places
+            // and bitwise-or it with the existing to add the bits together
+            value = (1 << i) | value;
+            i = i + 1;
+        }
+
+        return value;
+    }
+
+    #[test]
+    pub fn test_util_get_test_scope_value() {
+        // ensure the util function above works as expected
+        let mut i = 0;
+        let max_iterations = 16;
+        loop {
+            if i > max_iterations {
+                break;
+            }
+
+            // double the previous value and add 1
+            let value = get_test_scope_value(i);
+            let mut expected = 0;
+            if i > 0 {
+                expected = get_test_scope_value(i - 1) * 2 + 1;
+            }
+
+            // println!("{} bit = max {} [expecting: {}]", i, value, expected);
+
+            assert_eq!(value, expected);
+            assert!(value < MAX_VALUE);
+
+            i = i + 1;
+        }
+    }
+
     #[test]
     pub fn test_as_u64_calculate_single() {
         match Scope::new("TEST_SCOPE")
             .add_permission("TEST_PERMISSION_1") {
             Ok(scope) => {
                 // find the permission and pass the borrowed variable along the chain to grant
-                match scope.permission("TEST_PERMISSION_1").and_then(|mut perm| {
+                match scope.permission("TEST_PERMISSION_1").and_then(|perm| {
                     // grant the permission
                     return match perm.grant() {
                         Ok(p) => Some(p),
@@ -263,7 +316,7 @@ mod tests {
                 }
 
                 let value = scope.as_u64();
-                assert_eq!(value, 1);
+                assert_eq!(value, get_test_scope_value(scope.permissions.len() as u8));
             }
             _ => assert!(false)
         }

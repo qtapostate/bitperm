@@ -10,7 +10,7 @@ pub struct Permission {
     pub has_permission: bool
 }
 
-const MAX_VALUE: u64 = 9007199254740991; // = JsNumber.MAX_SAFE_INTEGER
+pub const MAX_VALUE: u64 = 9007199254740991; // = JsNumber.MAX_SAFE_INTEGER
 
 impl Permission {
     /** Creates a new permission. */
@@ -77,6 +77,15 @@ impl Permission {
 
 /** Validate that a bitwise shift is safe to perform both in Rust and JS **/
 fn validate_shift(name: &String, shift: &u8) -> Result<u8, ErrorKind> {
+    if *shift > 53 {
+        return Err(ErrorKind::PermissionError(PermissionError::new(
+            PermissionErrorCase::MaxShift,
+            name,
+            PermissionErrorMetadata {
+                shift: Some(*shift)
+            }
+        )))
+    }
     // check that we have not exceeded the safe left-shift that can be performed in the JSVM
     return match (1 << *shift) <= MAX_VALUE {
         true  => Ok(*shift),

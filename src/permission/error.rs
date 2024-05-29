@@ -11,6 +11,7 @@ pub struct PermissionError {
 pub enum PermissionErrorCase {
     MaxValue,
     InvalidValue,
+    MaxShift,
     GrantError,
     RevocationError
 }
@@ -41,7 +42,7 @@ const ERROR_NAME: &str = "PermissionError";
 
 fn format_error_message(f: &mut Formatter<'_>, case: &PermissionErrorCase, name: &String, metadata: &PermissionErrorMetadata) -> fmt::Result {
     let err: String = match *case {
-        PermissionErrorCase::MaxValue => {
+        PermissionErrorCase::MaxValue | PermissionErrorCase::MaxShift => {
             if let Some(shift_value) = (*metadata).shift {
                 format!("{}: parameter 'shift' ({}) for permission '{}' exceeded maximum safe value ({}).",
                         ERROR_NAME,

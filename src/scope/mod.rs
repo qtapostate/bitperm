@@ -41,6 +41,18 @@ impl Scope {
         }
     }
 
+    pub fn add_scope(&mut self, name: &str) -> Result<&mut Scope, ErrorKind> {
+        return match self.validate_name(&name.to_string()) {
+            Ok(_) => {
+                let new_scope = Scope::new(name);
+                self.scopes.insert(name.to_string(), new_scope);
+
+                Ok(self)
+            },
+            Err(err) => Err(err)
+        }
+    }
+
     /** Verify that the name given is not already contained within existing. **/
     pub fn validate_name(&self, name: &String) -> Result<(), ErrorKind> {
         let perm_unique = !self.permissions.is_empty() && self.permissions.contains_key(name);
@@ -175,7 +187,7 @@ mod tests {
 
                 assert_eq!(perm.is_some(), true);
             }
-            Err(kind) => assert!(false)
+            Err(_) => assert!(false)
         }
     }
 
@@ -187,22 +199,25 @@ mod tests {
         assert_eq!(perm.is_none(), true);
     }
 
-    // #[test]
-    // fn test_get_child_scope_exists_some() {
-    //     match
-    //         Scope::new("TEST_SCOPE")
-    //             .add_scope("TEST_SCOPE") {
-    //             Ok(scope) => {
-    //                 let child_scope = scope.scope("TEST_SCOPE");
-    //
-    //                 assert_eq!(child_scope.is_some(), true);
-    //             }
-    //             Err(kind) => assert!(false)
-    //         }
-    // }
+    #[test]
+    fn test_get_child_scope_exists_some() {
+        match
+            Scope::new("TEST_SCOPE")
+                .add_scope("TEST_CHILD_SCOPE") {
+                Ok(scope) => {
+                    let child_scope = scope.scope("TEST_CHILD_SCOPE");
 
-    // #[test]
-    // fn test_get_child_scope_missing_none() {
-    //     todo!()
-    // }
+                    assert_eq!(child_scope.is_some(), true);
+                }
+                Err(_) => assert!(false)
+            }
+    }
+
+    #[test]
+    fn test_get_child_scope_missing_none() {
+        let scope = Scope::new("TEST_SCOPE");
+        let child = scope.scope("TEST_CHILD_SCOPE");
+
+        assert_eq!(child.is_none(), true);
+    }
 }

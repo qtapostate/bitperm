@@ -54,9 +54,23 @@ impl Scope {
         }
     }
 
-    // pub fn permission(name: &str) -> Result<&Permission, ErrorKind> {
-    //
-    // }
+    /** Get a permission by name. */
+    pub fn permission(&self, name: &str) -> Option<&Permission> {
+        if self.permissions.is_empty() {
+            return None
+        }
+
+        self.permissions.get(name)
+    }
+
+    /** Get a scope by name. */
+    pub fn scope(&self, name: &str) -> Option<&Scope> {
+        if self.scopes.is_empty() {
+            return None
+        }
+
+        self.scopes.get(name)
+    }
 }
 
 #[cfg(test)]
@@ -150,4 +164,45 @@ mod tests {
                     }
         }
     }
+
+    #[test]
+    fn test_get_permission_exists_some() {
+        match
+            Scope::new("TEST_SCOPE")
+                .add_permission("TEST_PERMISSION") {
+            Ok(scope) => {
+                let perm = scope.permission("TEST_PERMISSION");
+
+                assert_eq!(perm.is_some(), true);
+            }
+            Err(kind) => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_get_permission_missing_none() {
+        let scope = Scope::new("TEST_SCOPE");
+        let perm = scope.permission("TEST_PERMISSION");
+
+        assert_eq!(perm.is_none(), true);
+    }
+
+    // #[test]
+    // fn test_get_child_scope_exists_some() {
+    //     match
+    //         Scope::new("TEST_SCOPE")
+    //             .add_scope("TEST_SCOPE") {
+    //             Ok(scope) => {
+    //                 let child_scope = scope.scope("TEST_SCOPE");
+    //
+    //                 assert_eq!(child_scope.is_some(), true);
+    //             }
+    //             Err(kind) => assert!(false)
+    //         }
+    // }
+
+    // #[test]
+    // fn test_get_child_scope_missing_none() {
+    //     todo!()
+    // }
 }

@@ -135,6 +135,17 @@ mod tests {
     }
 
     #[test]
+    fn test_scope_create_and_add_permission() {
+        let mut scope = Scope::new("TEST_SCOPE");
+        if let Ok(sc) = scope.add_permission("TEST_PERMISSION") {
+            assert_eq!(sc.permissions.len(), 1usize);
+            assert_eq!(sc.permission("TEST_PERMISSION").is_some(), true);
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
     fn test_scope_add_permission_ok_multiple() {
         let mut scope = Scope::new("TEST_SCOPE");
 
@@ -177,6 +188,20 @@ mod tests {
 
         // check that all 31 are there and properly named
         assert_eq!(scope.permissions.len(), max);
+    }
+
+    #[test]
+    fn test_scope_add_permission_ok_multiple_simple() {
+        let mut scope = Scope::new("TEST_SCOPE");
+
+        if let Ok(_) = scope
+            .add_permission("READ")
+            .and_then(|sc| sc.add_permission("WRITE"))
+            .and_then(|sc| sc.add_permission("EXECUTE")) {
+            assert_eq!(scope.permissions.len(), 3usize);
+        } else {
+            assert!(false);
+        }
     }
 
     #[test]
@@ -242,34 +267,55 @@ mod tests {
         assert_eq!(child.is_none(), true);
     }
 
+    #[test]
+    fn test_add_child_scope_simple() {
+        let mut scope = Scope::new("TEST_SCOPE");
+
+        if let Ok(_) = scope.add_scope("CHILD_SCOPE") {
+            if let Some(child_scope) = scope.scope("CHILD_SCOPE") {
+                // do something with the child scope
+                assert_eq!(child_scope.name, "CHILD_SCOPE");
+                assert_eq!(child_scope.scopes.is_empty(), true);
+                assert_eq!(child_scope.permissions.is_empty(), true);
+            }
+        } else {
+            // failed to create the child scope
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn test_add_child_and_add_permissions_to_child_scope() {
+        let mut scope = Scope::new("TEST_SCOPE");
+
+        if let Ok(_) = scope.add_scope("CHILD_SCOPE") {
+            if let Some(child_scope) = scope.scope("CHILD_SCOPE") {
+                // do something with the child scope
+                assert_eq!(child_scope.name, "CHILD_SCOPE");
+                assert_eq!(child_scope.scopes.is_empty(), true);
+                assert_eq!(child_scope.permissions.is_empty(), true);
+
+                if let Ok(_) = child_scope.add_permission("TEST_CHILD_PERMISSION") {
+                    assert_eq!(child_scope.permissions.len(), 1usize);
+                    assert_eq!(child_scope.permission("TEST_CHILD_PERMISSION").is_some(), true);
+                }
+            }
+        } else {
+            // failed to create the child scope
+            assert!(false);
+        }
+    }
+
     /**
         Get the final result given a number of added permissions
         assuming all permissions in a scope are granted.
      */
     fn get_test_scope_value(number_added: u8) -> u64 {
-        if number_added == 0 {
-            return 0;
-        }
-
-        let mut value = 0;
-        let mut i = 0;
-
-        loop {
-            if i > number_added - 1 {
-                break;
-            }
-
-            // shift 1 over a certain number of places
-            // and bitwise-or it with the existing to add the bits together
-            value = (1 << i) | value;
-            i = i + 1;
-        }
-
-        return value;
+        return 2u64.pow(number_added as u32) - 1;
     }
 
     #[test]
-    pub fn test_util_get_test_scope_value() {
+    fn test_util_get_test_scope_value() {
         // ensure the util function above works as expected
         let mut i = 0;
         let max_iterations = 16;
@@ -295,7 +341,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_as_u64_calculate_single() {
+    fn test_as_u64_calculate_single() {
         match Scope::new("TEST_SCOPE")
             .add_permission("TEST_PERMISSION_1") {
             Ok(scope) => {
@@ -323,7 +369,36 @@ mod tests {
     }
 
     #[test]
-    pub fn test_as_u64_calculate_multiple() {
+    fn test_add_and_grant_multiple_and_get_calculated_value() {
+        let mut scope = Scope::new("TEST_SCOPE");
+
+        if let Ok(_) = scope
+            .add_permission("READ")
+            .and_then(|sc| sc.add_permission("WRITE"))
+            .and_then(|sc| sc.add_permission("EXECUTE")) {
+            assert_eq!(scope.permissions.len(), 3usize);
+
+            for perm in vec!["READ", "WRITE", "EXECUTE"] {
+                scope.permission(perm).and_then(|p| {
+                    return if let Ok(granted) = p.grant() {
+                        Some(granted)
+                    } else {
+                        None
+                    }
+                });
+            }
+
+            let permissions_numeric = scope.as_u64();
+
+            assert_eq!(permissions_numeric, get_test_scope_value(3));
+
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn test_as_u64_calculate_multiple() {
         let mut scope = Scope::new("TEST_SCOPE");
         let mut i = 0;
         let max = 53;

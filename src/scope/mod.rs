@@ -247,25 +247,7 @@ mod tests {
         assuming all permissions in a scope are granted.
      */
     fn get_test_scope_value(number_added: u8) -> u64 {
-        if number_added == 0 {
-            return 0;
-        }
-
-        let mut value = 0;
-        let mut i = 0;
-
-        loop {
-            if i > number_added - 1 {
-                break;
-            }
-
-            // shift 1 over a certain number of places
-            // and bitwise-or it with the existing to add the bits together
-            value = (1 << i) | value;
-            i = i + 1;
-        }
-
-        return value;
+        return 2u64.pow(number_added as u32) - 1;
     }
 
     #[test]

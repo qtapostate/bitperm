@@ -67,21 +67,41 @@ impl Scope {
     }
 
     /** Get a permission by name. */
-    pub fn permission(&self, name: &str) -> Option<&Permission> {
+    pub fn permission(&mut self, name: &str) -> Option<&mut Permission> {
         if self.permissions.is_empty() {
             return None
         }
 
-        self.permissions.get(name)
+        self.permissions.get_mut(name)
     }
 
     /** Get a scope by name. */
-    pub fn scope(&self, name: &str) -> Option<&Scope> {
+    pub fn scope(&mut self, name: &str) -> Option<&mut Scope> {
         if self.scopes.is_empty() {
             return None
         }
 
-        self.scopes.get(name)
+        self.scopes.get_mut(name)
+    }
+
+    /**
+        Get the numeric value for permissions granted in the current scope,
+        not including any child scopes, as an unsigned 64-bit integer.
+     */
+    pub fn as_u64(&self) -> u64 {
+        let mut value: u64 = 0;
+
+        for permission in self.permissions.values() {
+            if permission.has() {
+                value = value | permission.value;
+            }
+        }
+
+        return value;
+    }
+
+    pub fn as_tuple(&self) -> (String, u64) {
+        return (self.name.clone(), self.as_u64());
     }
 }
 
@@ -193,7 +213,7 @@ mod tests {
 
     #[test]
     fn test_get_permission_missing_none() {
-        let scope = Scope::new("TEST_SCOPE");
+        let mut scope = Scope::new("TEST_SCOPE");
         let perm = scope.permission("TEST_PERMISSION");
 
         assert_eq!(perm.is_none(), true);
@@ -215,9 +235,37 @@ mod tests {
 
     #[test]
     fn test_get_child_scope_missing_none() {
-        let scope = Scope::new("TEST_SCOPE");
+        let mut scope = Scope::new("TEST_SCOPE");
         let child = scope.scope("TEST_CHILD_SCOPE");
 
         assert_eq!(child.is_none(), true);
+    }
+
+    #[test]
+    pub fn test_as_u64_calculate_single() {
+        match Scope::new("TEST_SCOPE")
+            .add_permission("TEST_PERMISSION_1") {
+            Ok(scope) => {
+                // find the permission and pass the borrowed variable along the chain to grant
+                match scope.permission("TEST_PERMISSION_1").and_then(|mut perm| {
+                    // grant the permission
+                    return match perm.grant() {
+                        Ok(p) => Some(p),
+                        _ => None
+                    }
+                }) {
+                    Some(p) => {
+                        // check successful grant
+                        assert_eq!(p.has_permission, true);
+                        assert_eq!(p.has(), true);
+                    }
+                    _ => assert!(false),
+                }
+
+                let value = scope.as_u64();
+                assert_eq!(value, 1);
+            }
+            _ => assert!(false)
+        }
     }
 }

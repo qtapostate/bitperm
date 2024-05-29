@@ -70,7 +70,7 @@ impl Permission {
         return Ok(self);
     }
 
-    pub fn has(&mut self) -> bool {
+    pub fn has(&self) -> bool {
         return self.has_permission;
     }
 }

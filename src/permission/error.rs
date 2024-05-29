@@ -10,7 +10,10 @@ pub struct PermissionError {
 
 pub enum PermissionErrorCase {
     MaxValue,
-    InvalidValue
+    InvalidValue,
+    MaxShift,
+    GrantError,
+    RevocationError
 }
 
 pub struct PermissionErrorMetadata {
@@ -39,7 +42,7 @@ const ERROR_NAME: &str = "PermissionError";
 
 fn format_error_message(f: &mut Formatter<'_>, case: &PermissionErrorCase, name: &String, metadata: &PermissionErrorMetadata) -> fmt::Result {
     let err: String = match *case {
-        PermissionErrorCase::MaxValue => {
+        PermissionErrorCase::MaxValue | PermissionErrorCase::MaxShift => {
             if let Some(shift_value) = (*metadata).shift {
                 format!("{}: parameter 'shift' ({}) for permission '{}' exceeded maximum safe value ({}).",
                         ERROR_NAME,
@@ -51,7 +54,9 @@ fn format_error_message(f: &mut Formatter<'_>, case: &PermissionErrorCase, name:
                 panic!("{} - PANIC: Unable to format error message due to missing metadata property 'shift'", ERROR_NAME);
             }
         },
-        PermissionErrorCase::InvalidValue => format!("{}: permission '{}' evaluated to an illegal value that is not 1 or a power of 2.", ERROR_NAME, *name)
+        PermissionErrorCase::InvalidValue => format!("{}: permission '{}' evaluated to an illegal value that is not 1 or a power of 2.", ERROR_NAME, *name),
+        PermissionErrorCase::GrantError => format!("{}: permission '{}' cannot be granted because it already has a value of <true>.", ERROR_NAME, *name),
+        PermissionErrorCase::RevocationError => format!("{}: permission '{}' cannot be revoked because it already has a value of <false>", ERROR_NAME, *name),
     };
 
     write!(f, "{}", err)

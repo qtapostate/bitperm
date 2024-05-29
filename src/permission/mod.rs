@@ -127,6 +127,46 @@ mod tests {
     }
 
     #[test]
+    fn test_create_and_grant() {
+        let granted = Permission::new("MY_PERMISSION", 5)
+            .and_then(|mut permission| {
+                return match permission.grant() {
+                    Ok(_) => Ok(permission),
+                    Err(err) => Err(err)
+                }
+            });
+
+        assert_eq!(granted.is_ok(), true);
+        match granted {
+            Ok(g) => assert_eq!(g.has_permission, true),
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_create_grant_and_revoke() {
+        let revoked = Permission::new("MY_PERMISSION", 5)
+            .and_then(|mut permission| {
+                return match permission.grant() {
+                    Ok(_) => Ok(permission),
+                    Err(err) => Err(err)
+                }
+            })
+            .and_then(|mut permission| {
+                return match permission.revoke() {
+                    Ok(_) => Ok(permission),
+                    Err(err) => Err(err)
+                }
+            });
+
+        assert_eq!(revoked.is_ok(), true);
+        match revoked {
+            Ok(r) => assert_eq!(r.has_permission, false),
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
     fn test_err_exceeded_max_shift() {
         let mut i = 0;
         let base = 50;

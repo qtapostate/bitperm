@@ -41,9 +41,13 @@ Once we have a `Permission` we can use `.grant()` and `.revoke()` to mark whethe
 **Granting a permission...**
 ```rust
     // something like this...
-    let granted = match Permission::new("MY_PERMISSION", 5).and_then(|permission| {
-        return permission.grant();
-    })
+    let granted = Permission::new("MY_PERMISSION", 5)
+      .and_then(|mut permission| {
+        return match permission.grant() {
+            Ok(_) => Ok(permission),
+            Err(err) => Err(err)
+        }
+      });
 
 ```
 Granting the permission will cause it to be counted when it is evaluated. If it is granted, its value will be included
@@ -53,9 +57,19 @@ granted will cause an error to be returned in the result of `.grant()`. **The de
 **Revoking a permission...**
 ```rust
     // something like this...
-    let revoked = match Permission::new("MY_PERMISSION", 5).and_then(|permission| {
-        return permission.revoke();
-    })
+    let revoked = Permission::new("MY_PERMISSION", 5) // created, now let's grant the permission
+      .and_then(|mut permission| {
+        return match permission.grant() {
+          Ok(_) => Ok(permission),
+          Err(err) => Err(err)
+        }
+      }) // permission is now granted
+      .and_then(|mut permission| { // now let's revoke the permission
+        return match permission.revoke() {
+          Ok(_) => Ok(permission),
+          Err(err) => Err(err)
+        }
+      }); // permission is now revoked
 
 ```
 Revoking the permission will cause it to be counted when it is evaluated. If it is revoked, its value will **not** included

@@ -77,21 +77,111 @@ in the final "permission number". Furthermore, granting a permission that is alr
 granted will cause an error to be returned in the result of `.revoke()`.
 
 ### Adding Permissions to a Scope
+A scope can encapsulate multiple permissions and operate on them as a group.
 
-TODO
+To add a permission to a scope:
+```rust
+  let mut scope = Scope::new("TEST_SCOPE");
+
+  // now add a permission
+  scope.add_permission("TEST_PERMISSION");
+```
+Notably here we do not have to specify a `shift` parameter because a `Scope` will manage that for us, incrementing
+the underlying "next shift" each time a permission is successfully added to the scope.
+
+To add multiple permissions to the scope:
+```rust
+  let mut scope = Scope::new("TEST_SCOPE");
+
+  if let Ok(_) = scope
+    .add_permission("READ")
+    .and_then(|sc| sc.add_permission("WRITE"))
+    .and_then(|sc| sc.add_permission("EXECUTE")) {
+        // all succeeded, do something with the updated scope...
+    }
+```
 
 ### Adding Child Scopes to a Scope
+We can add a child scope to a containing scope by using `.add_scope`
 
-TODO
+```rust
+  let mut scope = Scope::new("TEST_SCOPE");
+
+  if let Ok(_) = scope.add_scope("CHILD_SCOPE") {
+    if let Some(child_scope) = scope.scope("CHILD_SCOPE") {
+        // do something with the child scope
+    }
+  } else {
+    // failed to create the child scope
+  }
+
+```
+
+### Adding Permissions to a Child Scope
+We can add permissions to a child scope the same way we would add them to a containing scope.
+Presently, a child scope must first be attached before permissions are added to it.
+
+When we have a child scope, we can also add permissions to that child scope.
+This might represent a more granular level of permissivity as opposed to the resource represented by a
+containing scope. It also allows us to break up our permissions and effectively circumvent the limitation of
+52 permissions per scope.
+
+```rust
+  let mut scope = Scope::new("TEST_SCOPE");
+
+  if let Ok(_) = scope.add_scope("CHILD_SCOPE") {
+    if let Some(child_scope) = scope.scope("CHILD_SCOPE") {
+        if let Ok(_) = child_scope.add_permission("TEST_CHILD_PERMISSION") {
+            // added the permission successfully, do something else...
+        }
+    }
+  } else {
+    // failed to create the child scope
+  }
+
+```
 
 ### Converting to a Number or Tuple
+An easier way to deal with permissions can be to treat them as numbers.
+While a scope has more functionality when in its fully representative form, a "permission number" can be
+useful for performing bitwise operations but especially for transferring over the wire. This is a core design
+philosophy - that it is more efficient to transfer extensive permission profiles in this format as opposed to
+extensive JSON format. It may also be more effective to store them in this format and inflate them to their
+full form at runtime when needed.
 
-TODO
+```rust
+    let mut scope = Scope::new("TEST_SCOPE");
+
+    if let Ok(_) = scope
+        .add_permission("READ")
+        .and_then(|sc| sc.add_permission("WRITE"))
+        .and_then(|sc| sc.add_permission("EXECUTE")) {
+
+        // grant all of the permissions
+        for perm in vec!["READ", "WRITE", "EXECUTE"] {
+            scope.permission(perm).and_then(|p| {
+                return if let Ok(granted) = p.grant() {
+                    Some(granted)
+                } else {
+                    None
+                }
+            });
+        }
+
+        let permissions_numeric = scope.as_u64(); // in this example the u64 value is 7 and always takes 8 bytes
+
+        // do something with the value...
+
+    } else {
+        // failed to add the permissions...
+    }
+
+```
 
 ### Exporting to JSON, YAML, or PKL format
 
-TODO
+WIP
 
 ### Importing from JSON, YAML, or PKL format
 
-TODO
+WIP

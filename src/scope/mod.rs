@@ -1,8 +1,11 @@
 pub mod error;
+mod conversion;
 
 use std::collections::HashMap;
+use serde_json::Value;
 use crate::common::error::ErrorKind;
-use crate::permission::Permission;
+use crate::permission::{Permission};
+use crate::scope::conversion::ScopeTuple;
 use crate::scope::error::{ScopeError, ScopeErrorCase};
 
 pub struct Scope {
@@ -100,8 +103,101 @@ impl Scope {
         return value;
     }
 
-    pub fn as_tuple(&self) -> (String, u64) {
-        return (self.name.clone(), self.as_u64());
+    pub fn as_tuple(&self) -> ScopeTuple {
+        let mut permissions_vector: Vec<String> = vec![];
+        let mut scopes_vector: Vec<ScopeTuple> = vec![];
+
+        let mut i = 0;
+        for (name,_) in &self.permissions {
+            permissions_vector.insert(i, name.clone());
+            i += 1;
+        }
+
+        i = 0;
+        for (_, scope) in &self.scopes {
+            scopes_vector.insert(i, scope.as_tuple()); // recursive collapse
+        }
+
+        return ScopeTuple (self.name.clone(), self.as_u64(), permissions_vector, scopes_vector);
+    }
+
+    pub fn as_json(&self) -> Value {
+        self.as_tuple().to_json()
+    }
+
+    pub fn from_json(val: Value) -> Scope {
+        Scope::from(ScopeTuple::from(val))
+    }
+}
+
+impl Clone for ScopeTuple {
+    fn clone(&self) -> Self {
+        return ScopeTuple(self.0.clone(), self.1.clone(), self.2.clone(), self.3.clone());
+    }
+}
+
+impl From<ScopeTuple> for Scope {
+    fn from(ScopeTuple (name, permission_number, permission_names, child_scopes): ScopeTuple) -> Self {
+        let mut permissions = HashMap::<String, Permission>::new();
+        let mut scopes = HashMap::<String, Scope>::new();
+
+        let mut i = 0;
+        let permission_count = permission_names.len();
+        let scope_count = child_scopes.len();
+
+        // populate a hashmap with k-v pairs of (name, permission)
+        let r_expand_permissions: Result<(), ()> = loop {
+            if i >= permission_count {
+                break Ok(());
+            }
+
+            if let Ok(mut perm) = Permission::new(permission_names[i].as_str(), i as u8) {
+                if permission_number & perm.value == perm.value {
+                    let _ = perm.grant(); // we have the numeric amount, so grant the permission in expanded form
+                }
+
+                permissions.insert(permission_names[i].clone(), perm);
+            } else {
+                break Err(());
+            }
+
+            i += 1;
+        };
+
+        if r_expand_permissions.is_err() {
+            panic!("Unable to transform scope tuple into scope: failed to expand permissions.")
+        }
+
+        i = 0;
+        let r_expand_scopes: Result<(), ()> = loop {
+            if i >= scope_count {
+                break Ok(())
+            }
+
+            let ScopeTuple (n,p, r, c) = child_scopes[i].clone();
+            let child = Scope::from(ScopeTuple(n.clone(), p, r, c));
+
+            scopes.insert(n.to_string(), child);
+
+            i += 1;
+        };
+
+        if r_expand_scopes.is_err() {
+            panic!("Unable to transform scope tuple into scope: failed to expand child scopes.")
+        }
+
+        let mut scope = Scope::new(name.as_str());
+        scope.permissions = permissions;
+        scope.next_permission_shift = permission_count as u8;
+        scope.scopes = scopes;
+
+        scope // final constructed scope is expanded from tuple form
+    }
+}
+
+impl From<Scope> for ScopeTuple {
+    fn from(value: Scope) -> Self {
+        value.as_tuple()
     }
 }
 
@@ -433,4 +529,5 @@ mod tests {
 
         assert_eq!(scope.as_u64(), get_test_scope_value(scope.permissions.len() as u8));
     }
+
 }

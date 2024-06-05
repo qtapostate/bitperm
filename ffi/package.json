@@ -1,7 +1,8 @@
 {
   "name": "bitperm",
   "version": "0.1.0",
-  "description": "Typescript bindings for Bitperm library.",
+  "private": true,
+  "description": "Javascript module generated using Rust FFI via Neon.",
   "main": "index.node",
   "scripts": {
     "build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",

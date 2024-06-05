@@ -1,8 +1,0 @@
-[package]
-name = "bitperm_js"
-authors = ["Alexandra Belluscio"]
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-neon = "1.0.0"

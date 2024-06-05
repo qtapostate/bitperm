@@ -1,4 +1,3 @@
 [workspace]
-members = ["core", "ffi"]
+members = ["core", "jslib"]
 resolver = "2"
-exclude = ["jslib"]

@@ -7,15 +7,15 @@ divided into individual permissions and groups of permissions.
 * Designed to keep token size predictable and minimal when encoding permissions on a JSON Web Token (JWT).
   * Up to 52 permission rules can be encoded into a single unsigned 64-bit integer (u64).
   * An "infinite" number of scopes can be added to break up permissions further, allowing for hundreds of permissions.
+* Export permission scopes to JSON format.
+* Import permission scopes from JSON format.
 
 ### WIP Features
-* **WIP:** Programmatic and CLI support for exporting to and importing from JSON, YAML, or PKL format.
 * **WIP:** Native support for Node 18+.
 
 ### Planned/Future Features
 * **Planned:** Support for the following Rust HTTP frameworks: Rocket vTBD+, Warp vTBD+, Poem vTBD+
 * **Planned:** Support for the following NodeJS HTTP frameworks: Express vTBD+
-* **Planned:** Native support for Python 3.
 
 ## Brief Overview
 Full development documentation forthcoming. For now, this is a basic guide to using this utility.

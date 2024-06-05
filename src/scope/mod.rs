@@ -122,7 +122,7 @@ impl Scope {
     }
 
     pub fn as_json(&self) -> Value {
-        self.as_tuple().as_json()
+        self.as_tuple().to_json()
     }
 
     pub fn from_json(val: Value) -> Scope {

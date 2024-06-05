@@ -7,7 +7,7 @@ pub struct ScopeTuple (pub String, pub u64, pub Vec<String>, pub Vec<ScopeTuple>
 
 impl ScopeTuple {
     /** Convert this value from a ScopeTuple into its equivalent JSON representation. */
-    pub fn as_json(self) -> Value {
+    pub fn to_json(self) -> Value {
         Value::from(self)
     }
 
@@ -257,7 +257,7 @@ mod tests {
 
         assert!(validate_scope(&Scope::from(scope.as_tuple()), &scope));
 
-        let json = scope.as_tuple().as_json();
+        let json = scope.as_tuple().to_json();
         assert!(json.is_array());
         assert!(validate_scope(&Scope::from_json(json), &scope));
     }

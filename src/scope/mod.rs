@@ -142,8 +142,8 @@ impl From<ScopeTuple> for Scope {
                 break Ok(());
             }
 
-            if let Ok(mut perm) = Permission::new(permission_names[i].as_str(), (i + 1) as u8) {
-                if permission_number & (2 << i) == (2 << i) {
+            if let Ok(mut perm) = Permission::new(permission_names[i].as_str(), i as u8) {
+                if permission_number & perm.value == perm.value {
                     let _ = perm.grant(); // we have the numeric amount, so grant the permission in expanded form
                 }
 
@@ -183,6 +183,12 @@ impl From<ScopeTuple> for Scope {
         scope.scopes = scopes;
 
         scope // final constructed scope is expanded from tuple form
+    }
+}
+
+impl From<Scope> for ScopeTuple {
+    fn from(value: Scope) -> Self {
+        value.as_tuple()
     }
 }
 

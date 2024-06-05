@@ -6,14 +6,18 @@ use serde_json::{from_value, to_value, Value};
 pub struct ScopeTuple (pub String, pub u64, pub Vec<String>, pub Vec<ScopeTuple>);
 
 impl ScopeTuple {
+    /** Convert this value from a ScopeTuple into its equivalent JSON representation. */
     pub fn as_json(self) -> Value {
         Value::from(self)
     }
 
+    /** Convert a value from JSON representation into a ScopeTuple. */
     pub fn from_json(value: Value) -> ScopeTuple {
         ScopeTuple::from(value)
     }
 }
+
+// JSON Value Conversion
 
 impl From<Value> for ScopeTuple {
     fn from(value: Value) -> Self {
@@ -34,6 +38,10 @@ impl From<ScopeTuple> for Value {
         }
     }
 }
+
+// YAML Value Conversion
+
+
 
 mod tests {
     use crate::scope::Scope;

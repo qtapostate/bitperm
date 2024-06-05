@@ -18,3 +18,4 @@ core/Cargo.lock
 *.pdb
 
 node_modules
+build

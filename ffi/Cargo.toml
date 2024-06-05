@@ -1,5 +1,5 @@
 [package]
-name = "bitperm"
+name = "bitpermjs"
 version = "0.1.0"
 description = "Typescript bindings for Bitperm library."
 authors = ["Alexandra Belluscio"]

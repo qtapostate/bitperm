@@ -3,18 +3,18 @@
 version = 3
 
 [[package]]
-name = "bitperm"
-version = "0.1.0"
-dependencies = [
- "neon",
-]
-
-[[package]]
 name = "bitperm_core"
 version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "bitpermjs"
+version = "0.1.0"
+dependencies = [
+ "neon",
 ]
 
 [[package]]
